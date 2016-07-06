@@ -51,8 +51,9 @@ COPY assets/index.jsp /alfresco/tomcat/webapps/ROOT/
 # install s3 connector (amp)
 COPY assets/alfresco-cloud-store.amp /alfresco/amps/
 
-#VOLUME /alfresco/alf_data
-#VOLUME /alfresco/tomcat/logs
+VOLUME /alfresco/alf_data/solr4
+VOLUME /alfresco/alf_data/contentstore.deleted
+VOLUME /alfresco/tomcat/logs
 
 EXPOSE 21 137 138 139 445 7070 8009 8080 8443
 CMD /usr/bin/supervisord -c /etc/supervisord.conf -n
