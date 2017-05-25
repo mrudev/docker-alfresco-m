@@ -15,10 +15,10 @@ chmod +x $ALF_BIN
 
 # install alfresco
 #./$ALF_BIN --mode unattended --prefix $ALF_HOME --alfresco_admin_password admin
-./$ALF_BIN --mode unattended --enable-components javaalfresco,libreofficecomponent,alfrescogoogledocs,alfrescosolr4,aosmodule --disable-components postgres,alfrescosolr,alfrescowcmqs --prefix $ALF_HOME --alfresco_admin_password admin
+./$ALF_BIN --mode unattended --enable-components javaalfresco,libreofficecomponent,alfrescogoogledocs,alfrescosolr4,aosmodule,postgres --disable-components alfrescosolr,alfrescowcmqs --prefix $ALF_HOME --alfresco_admin_password admin
 
 # get rid of installer - makes image smaller
-#rm $ALF_BIN
+rm $ALF_BIN
 
 # add alfresco user
 #useradd alfresco

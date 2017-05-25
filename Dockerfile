@@ -15,7 +15,9 @@ RUN yum update -y && \
                    libXrender \
                    supervisor \
                    wget \
-                   patch && \
+                   patch \
+				   libGL \
+                   libGLU && \
     yum clean all
 
 # install oracle java
@@ -48,12 +50,25 @@ COPY assets/supervisord.conf /etc/supervisord.conf
 RUN mkdir -p /alfresco/tomcat/webapps/ROOT
 COPY assets/index.jsp /alfresco/tomcat/webapps/ROOT/
 
+# js-console alfresco and share jar files
+COPY assets/modules /modules/
+
+# inject the jars in the alfresco.war file
+RUN cd /modules/alfresco && \
+	jar uf /alfresco/tomcat/webapps/alfresco.war WEB-INF/lib/*.jar
+
+RUN cd /modules/share && \
+	jar uf /alfresco/tomcat/webapps/share.war WEB-INF/lib/*.jar
+
+# install newrelic agent files
+COPY newrelic /opt/newrelic/
+
 # install s3 connector (amp)
 COPY assets/alfresco-cloud-store.amp /alfresco/amps/
 
-VOLUME /alfresco/alf_data/solr4
+#VOLUME /alfresco/alf_data/solr4
 VOLUME /alfresco/alf_data/contentstore.deleted
 VOLUME /alfresco/tomcat/logs
 
-EXPOSE 21 137 138 139 445 7070 8009 8080 8443
+EXPOSE 443 7070 8009 8080 8443
 CMD /usr/bin/supervisord -c /etc/supervisord.conf -n

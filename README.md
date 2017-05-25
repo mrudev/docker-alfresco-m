@@ -1,4 +1,4 @@
-# docker-alfresco-m
+lfresco-m
 
 Format run command: 
 

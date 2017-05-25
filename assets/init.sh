@@ -82,6 +82,12 @@ S3_ACCESS_KEY=${S3_ACCESS_KEY:-false}
 S3_SECRET_KEY=${S3_SECRET_KEY:-false}
 S3_BUCKET_NAME=${S3_BUCKET_NAME:-false}
 
+NEWRELIC_APPNAME=${NEWRELIC_APPNAME:-false}
+NEWRELIC_LICENSEKEY=${NEWRELIC_LICENSEKEY:-false}
+
+SEARCH_INDEX=${SEARCH_INDEX:-noindex}
+MEMORY=${MEMORY:-60}
+
 function cfg_replace_option {
   grep "$1" "$3" > /dev/null
   if [ $? -eq 0 ]; then
@@ -172,9 +178,12 @@ function tweak_alfresco {
   cfg_replace_option s3.accesskey $S3_ACCESS_KEY $ALFRESCO_GLOBAL_PROPERTIES
   cfg_replace_option s3.secretkey $S3_SECRET_KEY $ALFRESCO_GLOBAL_PROPERTIES
   cfg_replace_option s3.bucketname $S3_BUCKET_NAME $ALFRESCO_GLOBAL_PROPERTIES
-  
-  #cfg_replace_option solr.host 172.18.0.2 $ALFRESCO_GLOBAL_PROPERTIES
+
+  cfg_replace_option index.subsystem.name $SEARCH_INDEX $ALFRESCO_GLOBAL_PROPERTIES
 }
+
+# Rename libreoffice_ctl.sh
+mv $ALF_HOME/libreoffice/scripts/libreoffice_ctl.sh  $ALF_HOME/libreoffice/scripts/ctl.sh
 
 tweak_alfresco
 
@@ -193,6 +202,9 @@ fi
 # setup environment
 source $ALF_HOME/scripts/setenv.sh
 
+$ALF_HOME/libreoffice/scripts/ctl.sh start
+$ALF_HOME/libreoffice/scripts/ctl.sh stop
+
 # start internal postgres server only if the host is localhost
 if [ "${DB_KIND,,}" == "postgresql" ] && [ "$DB_HOST" == "localhost" ]; then
   $ALF_HOME/postgresql/scripts/ctl.sh start
@@ -204,6 +216,17 @@ if [ "$TOMCAT_CSRF_ENABLED" == "false" ] && [ -f "$TOMCAT_CSRF_PATCH" ] ;then
   patch -Np0 < $TOMCAT_CSRF_PATCH
   [ $? == 0 ] && mv "$TOMCAT_CSRF_PATCH" "${TOMCAT_CSRF_PATCH}.done"
 fi
+
+# Set java memory
+MEM_TOT=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+MEM_JAVA='-Xmx'$(($MEM_TOT / 100000 * $MEMORY))'M'
+sed -i -e "s/-Xmx2048M/$MEM_JAVA/g" $CATALINA_HOME/bin/setenv.sh
+
+# Set Newrelic monitoring configuration
+sed -i "s/export JAVA_HOME/JAVA_OPTS=\"\$JAVA_OPTS -javaagent:\/opt\/newrelic\/newrelic.jar \"\nexport JAVA_HOME/g" $CATALINA_HOME/bin/setenv.sh
+
+sed -i -e "s/LICENSEKEY/$NEWRELIC_LICENSEKEY/g" /opt/newrelic/newrelic.yml
+sed -i -e "s/APPNAME/$NEWRELIC_APPNAME/g" /opt/newrelic/newrelic.yml
 
 # start alfresco
 $ALF_HOME/tomcat/scripts/ctl.sh start
